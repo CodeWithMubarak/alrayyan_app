@@ -310,6 +310,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // زر درع الأمان للانتقال الفوري لبوابة المدير
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: IconButton(
+                          icon: const Icon(Icons.shield_outlined, size: 22, color: Color(AppColors.goldAccent)),
+                          tooltip: 'بوابة الإدارة',
+                          onPressed: () => context.push(AppRoutes.adminLogin),
+                        ),
+                      ),
+
                       // شعار المسجد (مع نقرة سرية 4 مرات لفتح شاشة المدير الخاصة)
                       GestureDetector(
                         onTap: () {
