@@ -49,7 +49,7 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
 
   Widget _buildBody(BuildContext context) {
     final store = AppDataStore.instance;
-    final allStudents = store.students;
+    final allStudents = store.getVisibleStudents();
 
     if (allStudents.isEmpty) {
       return Center(
@@ -58,10 +58,10 @@ class _ParentDashboardScreenState extends ConsumerState<ParentDashboardScreen> {
           children: [
             const Icon(Icons.family_restroom, size: 70, color: Colors.grey),
             const SizedBox(height: 16),
-            const Text('لا يوجد طلاب مسجلون حالياً',
+            const Text('لم يتم العثور على أبناء مرتبطين بحسابك',
                 style: TextStyle(fontFamily: 'Cairo', fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('يقوم المدير بإضافة الأبناء وربطهم بحسابك',
+            Text('يرجى من إدارة المسجد ربط رقم هاتفك المسجل بملف الابن',
                 style: TextStyle(fontFamily: 'Cairo', color: Colors.grey.shade600)),
           ],
         ),

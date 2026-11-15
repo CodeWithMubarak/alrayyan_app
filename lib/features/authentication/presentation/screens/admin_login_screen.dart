@@ -22,8 +22,8 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
   static const String officialAdminEmail = 'hymdyhmbarksyd@gmail.com';
   static const String officialAdminPassword = '77815779805';
 
-  final _emailController = TextEditingController(text: officialAdminEmail);
-  final _passwordController = TextEditingController(text: officialAdminPassword);
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _isLoading = false;

@@ -49,8 +49,11 @@ class _StudentDashboardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = AppDataStore.instance;
-    // إذا كان المستخدم طالب نأخذ سجله، أو نأخذ أول طالب مسجل للعرض
-    final student = store.students.isNotEmpty ? store.students.first : null;
+    final user = store.currentUser;
+    final student = store.students.cast<StudentModel?>().firstWhere(
+          (s) => s != null && (s.id == user?.id || s.studentNumber == user?.phone || s.fullName == user?.name),
+          orElse: () => store.students.isNotEmpty ? store.students.first : null,
+        );
 
     if (student == null) {
       return Center(

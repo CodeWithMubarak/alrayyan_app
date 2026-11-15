@@ -31,17 +31,21 @@ class UpdateService {
   }
 
   /// فحص التحديثات يدوياً أو تلقائياً
-  Future<void> checkForUpdates(BuildContext context, {bool isSilentIfLatest = false}) async {
+  Future<void> checkForUpdates(BuildContext context,
+      {bool isSilentIfLatest = false}) async {
     try {
-      final url = Uri.parse('https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest');
+      final url = Uri.parse(
+          'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest');
       final response = await http.get(url, headers: {
         'Accept': 'application/vnd.github.v3+json',
       }).timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final latestTag = (data['tag_name'] as String? ?? '').replaceAll('v', '').trim();
-        final releaseNotes = data['body'] as String? ?? 'تحسينات وإصلاحات عامة في المنظومة';
+        final latestTag =
+            (data['tag_name'] as String? ?? '').replaceAll('v', '').trim();
+        final releaseNotes =
+            data['body'] as String? ?? 'تحسينات وإصلاحات عامة في المنظومة';
         final assets = (data['assets'] as List?) ?? [];
 
         // البحث عن رابط APK في أصول الإصدار
@@ -92,8 +96,10 @@ class UpdateService {
   bool _isNewerVersion(String latest, String current) {
     if (latest.isEmpty) return false;
     try {
-      final latestParts = latest.split('.').map((p) => int.tryParse(p) ?? 0).toList();
-      final currentParts = current.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+      final latestParts =
+          latest.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+      final currentParts =
+          current.split('.').map((p) => int.tryParse(p) ?? 0).toList();
 
       for (var i = 0; i < latestParts.length && i < currentParts.length; i++) {
         if (latestParts[i] > currentParts[i]) return true;
@@ -105,20 +111,26 @@ class UpdateService {
     }
   }
 
-  void _showUpdateDialog(BuildContext context, String version, String notes, String downloadUrl) {
+  void _showUpdateDialog(
+      BuildContext context, String version, String notes, String downloadUrl) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Row(
             children: [
-              Icon(Icons.system_update, color: Color(AppColors.primaryGreen), size: 28),
+              Icon(Icons.system_update,
+                  color: Color(AppColors.primaryGreen), size: 28),
               SizedBox(width: 10),
               Text(
                 'تحديث جديد متاح للمنظومة',
-                style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16),
               ),
             ],
           ),
@@ -127,20 +139,25 @@ class UpdateService {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(AppColors.goldAccent).withAlpha(30),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   'الإصدار الجديد: v$version  (الإصدار الحالي: v$currentVersion)',
-                  style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 12),
+                  style: const TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12),
                 ),
               ),
               const SizedBox(height: 12),
               const Text(
                 'يتوفر تحديث جديد لحلقات مسجد الريان يشمل تحسينات أمنية وتطويرات مهمة:',
-                style: TextStyle(fontFamily: 'Cairo', fontSize: 12, height: 1.4),
+                style:
+                    TextStyle(fontFamily: 'Cairo', fontSize: 12, height: 1.4),
               ),
               const SizedBox(height: 8),
               Container(
@@ -151,8 +168,11 @@ class UpdateService {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  notes.isNotEmpty ? notes : '• تحسين الأداء وسرعة النظام\n• ميزات إضافية للمالية والتقارير',
-                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.black87),
+                  notes.isNotEmpty
+                      ? notes
+                      : '• تحسين الأداء وسرعة النظام\n• ميزات إضافية للمالية والتقارير',
+                  style: const TextStyle(
+                      fontFamily: 'Cairo', fontSize: 11, color: Colors.black87),
                   maxLines: 4,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -162,7 +182,8 @@ class UpdateService {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('لاحقاً', style: TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+              child: const Text('لاحقاً',
+                  style: TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
             ),
             ElevatedButton.icon(
               onPressed: () async {
@@ -175,10 +196,13 @@ class UpdateService {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(AppColors.primaryGreen),
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
               ),
               icon: const Icon(Icons.download, size: 18),
-              label: const Text('تنزيل وتحديث الآن', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+              label: const Text('تنزيل وتحديث الآن',
+                  style: TextStyle(
+                      fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -186,4 +210,3 @@ class UpdateService {
     );
   }
 }
-

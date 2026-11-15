@@ -74,7 +74,7 @@ class _StudentsScreenState extends ConsumerState<StudentsScreen> {
             tooltip: 'تصدير كشف الطلاب إلى Excel',
             onPressed: () async {
               final store = AppDataStore.instance;
-              await ExportService.instance.exportStudentsToExcel(store.students);
+              await ExportService.instance.exportStudentsToExcel(store.getVisibleStudents());
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

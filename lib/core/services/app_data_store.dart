@@ -237,9 +237,10 @@ class AppDataStore extends ChangeNotifier {
     ));
   }
 
-  // ===== دوال التصفية حسب الصلاحية والأدوار =====
+  // ===== دوال التصفية حسب الصلاحية والأدوار بدقة أمنية تامة =====
   List<CircleModel> getVisibleCircles() {
-    if (currentUser?.role == UserRole.teacher) {
+    final role = currentUser?.role;
+    if (role == UserRole.teacher) {
       final assigned = currentUser?.assignedCircleIds ?? [];
       final tId = currentUser?.id ?? '';
       final tName = currentUser?.name.trim() ?? '';
@@ -248,15 +249,39 @@ class AppDataStore extends ChangeNotifier {
             c.teacherId == tId ||
             (tName.isNotEmpty && c.teacherName.contains(tName));
       }).toList();
+    } else if (role == UserRole.parent) {
+      final myStudentCircleIds = getVisibleStudents().map((s) => s.circleId).toSet();
+      return circles.where((c) => myStudentCircleIds.contains(c.id)).toList();
+    } else if (role == UserRole.student) {
+      final myStudent = students.cast<StudentModel?>().firstWhere(
+        (s) => s?.id == currentUser?.id,
+        orElse: () => null,
+      );
+      final myCircleId = myStudent?.circleId ?? currentUser?.assignedCircleIds?.firstOrNull;
+      return circles.where((c) => c.id == myCircleId).toList();
     }
+    // المدير العام يرى جميع الحلقات
     return circles;
   }
 
   List<StudentModel> getVisibleStudents() {
-    if (currentUser?.role == UserRole.teacher) {
+    final role = currentUser?.role;
+    if (role == UserRole.teacher) {
       final myCircleIds = getVisibleCircles().map((c) => c.id).toSet();
       return students.where((s) => myCircleIds.contains(s.circleId)).toList();
+    } else if (role == UserRole.parent) {
+      final phone = currentUser?.phone?.trim().replaceAll(' ', '') ?? '';
+      final studentId = currentUser?.id.replaceAll('parent_', '') ?? '';
+      return students.where((s) {
+        final p1 = s.guardianPhone.trim().replaceAll(' ', '');
+        final p2 = s.guardianPhone2?.trim().replaceAll(' ', '') ?? '';
+        return (phone.isNotEmpty && (p1 == phone || (p2.isNotEmpty && p2 == phone))) || s.id == studentId;
+      }).toList();
+    } else if (role == UserRole.student) {
+      final sId = currentUser?.id ?? '';
+      return students.where((s) => s.id == sId).toList();
     }
+    // المدير العام يرى جميع الطلاب
     return students;
   }
 
@@ -279,9 +304,8 @@ class AppDataStore extends ChangeNotifier {
   }
 
   void deleteCircle(String circleId) {
-    circles.removeWhere((c) => c.id == circleId);
-    notifyListeners();
-    _saveToStorage();
+    // 🛡️ حماية صارمة: منع حذف أي حلقة نهائياً بقرار الإدارة العامة لحفظ أصول المسجد وسجلات الطلاب
+    debugPrint('تنبيه أمني: حذف الحلقات معطل بطلب الإدارة العامة لحماية بيانات المسجد: $circleId');
   }
 
   CircleModel? findCircleByCode(String code) {

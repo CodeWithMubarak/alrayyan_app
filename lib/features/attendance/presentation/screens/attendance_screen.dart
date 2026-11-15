@@ -5,6 +5,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/services/app_data_store.dart';
 import '../../../../core/services/export_service.dart';
+import '../../../../core/services/pdf_report_service.dart';
 import '../../../../data/models/attendance_model.dart';
 import '../../../../data/models/student_model.dart';
 
@@ -49,6 +50,21 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       appBar: AppBar(
         title: const Text(AppStrings.attendanceSheet),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf_outlined),
+            tooltip: 'تصدير وحفظ كشف الحضور الشهري PDF',
+            onPressed: () {
+              final store = AppDataStore.instance;
+              if (_selectedCircleId != null) {
+                final circle = store.circles.firstWhere((c) => c.id == _selectedCircleId);
+                PdfReportService.instance.printCircleMonthlyReport(circle: circle);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('يرجى تحديد حلقة أولاً لتصدير كشف حضورها', style: TextStyle(fontFamily: 'Cairo'))),
+                );
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.table_view_outlined),
             tooltip: 'تصدير سجل الحضور إلى Excel',

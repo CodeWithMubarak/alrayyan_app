@@ -10,6 +10,7 @@ import '../../../../core/widgets/stat_card.dart';
 import '../../../../core/widgets/app_sidebar.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../core/widgets/quran_daily_verse_card.dart';
+import '../../../../core/services/pdf_report_service.dart';
 
 /// لوحة تحكم المدرس
 class TeacherDashboardScreen extends ConsumerStatefulWidget {
@@ -33,6 +34,21 @@ class _TeacherDashboardScreenState extends ConsumerState<TeacherDashboardScreen>
           : AppBar(
               title: const Text('لوحة المدرس والحلقات'),
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.picture_as_pdf),
+                  tooltip: 'تصدير وحفظ التقرير الشهري للحلقة كملف PDF',
+                  onPressed: () {
+                    final store = AppDataStore.instance;
+                    final myCircle = store.getVisibleCircles().firstOrNull ?? store.circles.firstOrNull;
+                    if (myCircle != null) {
+                      PdfReportService.instance.printCircleMonthlyReport(circle: myCircle);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('لا توجد حلقة مسندة لتصدير تقريرها', style: TextStyle(fontFamily: 'Cairo'))),
+                      );
+                    }
+                  },
+                ),
                 IconButton(
                   icon: const Icon(Icons.notifications_outlined),
                   onPressed: () => context.push(AppRoutes.notifications),
@@ -145,6 +161,23 @@ class _TeacherDashboardScreenState extends ConsumerState<TeacherDashboardScreen>
                       icon: Icons.menu_book,
                       label: 'تسجيل الحفظ',
                       onTap: () => context.push(AppRoutes.memorization),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildQuickAction(
+                      context,
+                      icon: Icons.picture_as_pdf,
+                      label: 'حفظ PDF',
+                      onTap: () {
+                        final store = AppDataStore.instance;
+                        final myCircle = store.getVisibleCircles().firstOrNull ?? store.circles.firstOrNull;
+                        if (myCircle != null) {
+                          PdfReportService.instance.printCircleMonthlyReport(circle: myCircle);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('لا توجد حلقة مسندة لتصدير تقريرها', style: TextStyle(fontFamily: 'Cairo'))),
+                          );
+                        }
+                      },
                     ),
                   ],
                 ),

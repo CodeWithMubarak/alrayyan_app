@@ -7,6 +7,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/services/app_data_store.dart';
 import '../../../../data/models/circle_model.dart';
+import '../../../../core/services/pdf_report_service.dart';
 import '../widgets/circle_barcode_dialog.dart';
 
 class CircleDetailScreen extends ConsumerWidget {
@@ -29,6 +30,11 @@ class CircleDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(circle.name),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'تصدير وحفظ التقرير الشهري الشامل PDF',
+            onPressed: () => PdfReportService.instance.printCircleMonthlyReport(circle: circle),
+          ),
           IconButton(
             icon: const Icon(Icons.qr_code_2),
             tooltip: 'إنشاء وعرض باركود الحلقة',
@@ -59,6 +65,25 @@ class CircleDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // زر تصدير وحفظ التقرير الشهري للحلقة كملف PDF
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => PdfReportService.instance.printCircleMonthlyReport(circle: circle),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(AppColors.primaryGreen),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                icon: const Icon(Icons.picture_as_pdf, size: 22, color: Color(AppColors.goldAccent)),
+                label: const Text(
+                  '📄 تصدير وحفظ تقرير الحلقة الشهري والحضور (PDF)',
+                  style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+            ),
             // بطاقة بيانات الأمان للحلقة
             Container(
               padding: const EdgeInsets.all(16),

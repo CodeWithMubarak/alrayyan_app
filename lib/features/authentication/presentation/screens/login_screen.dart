@@ -24,10 +24,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   static const String officialAdminEmail = 'hymdyhmbarksyd@gmail.com';
   static const String officialAdminPassword = '77815779805';
 
-  // حقول الدخول بحساب المدير العام
-  final _adminEmailController = TextEditingController(text: officialAdminEmail);
-  final _adminPasswordController = TextEditingController(text: officialAdminPassword);
-
   // حقول الدخول بحساب المعلم
   final _teacherEmailController = TextEditingController(text: 'teacher@alrayyan.com');
   final _teacherPasswordController = TextEditingController(text: '123456');
@@ -46,17 +42,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool _obscurePassword = true;
   bool _isLoading = false;
-  int _logoTapCount = 0; // نقرات سرية للانتقال لبوابة الإدارة المنفصلة
+  int _logoTapCount = 0;
 
-  // 0 = المدير العام، 1 = المعلم، 2 = ولي الأمر، 3 = الطالب
+  // 0 = المعلم، 1 = ولي الأمر، 2 = الطالب
   int _userType = 0;
   // 0 = بالبريد/كلمة المرور، 1 = بكود الحلقة (خاص بالمعلم)
   int _teacherLoginMode = 0;
 
   @override
   void dispose() {
-    _adminEmailController.dispose();
-    _adminPasswordController.dispose();
     _teacherEmailController.dispose();
     _teacherPasswordController.dispose();
     _circleCodeController.dispose();
@@ -86,25 +80,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!mounted) return;
 
     if (_userType == 0) {
-      // ===== المدير العام: فحص بيانات الإدارة الرسمية =====
-      final email = _adminEmailController.text.trim().toLowerCase();
-      final pass = _adminPasswordController.text.trim();
-
-      if (email.isEmpty || pass.isEmpty) {
-        setState(() => _isLoading = false);
-        _showError('يرجى إدخال البريد الإلكتروني للمدير العام وكلمة المرور');
-        return;
-      }
-
-      if (email == officialAdminEmail.toLowerCase() && pass == officialAdminPassword) {
-        _loginAsAdmin(store);
-        return;
-      } else {
-        setState(() => _isLoading = false);
-        _showError('بيانات المدير العام غير صحيحة. يرجى التأكد من البريد أو كلمة المرور.');
-        return;
-      }
-    } else if (_userType == 1) {
       // ===== المعلم =====
       if (_teacherLoginMode == 0) {
         final email = _teacherEmailController.text.trim().toLowerCase();
@@ -182,7 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         setState(() => _isLoading = false);
         context.go(AppRoutes.dashboard);
       }
-    } else if (_userType == 2) {
+    } else if (_userType == 1) {
       // ===== ولي الأمر: تسجيل الدخول برقم الجوال وكلمة المرور مع فحص أمني حقيقي =====
       final phone = _guardianPhoneController.text.trim();
       final pass = _guardianPasswordController.text.trim();
@@ -236,7 +211,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       );
       context.go(AppRoutes.dashboard);
-    } else if (_userType == 3) {
+    } else if (_userType == 2) {
       // ===== الطالب: تسجيل الدخول برقم الطالب أو اسمه مع كلمة المرور =====
       final input = _studentNumberController.text.trim().toLowerCase();
       final pass = _studentPasswordController.text.trim();
@@ -401,7 +376,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 22),
 
-                      // تبويبات المستخدمين الأربعة الشاملة (المدير العام، المعلم، ولي الأمر، الطالب)
+                      // تبويبات المستخدمين العامة فقط (المعلم، ولي الأمر، الطالب)
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
@@ -411,10 +386,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         child: Row(
                           children: [
-                            _buildRoleTab(0, 'المدير العام', Icons.admin_panel_settings),
-                            _buildRoleTab(1, 'المعلم', Icons.school),
-                            _buildRoleTab(2, 'ولي الأمر', Icons.family_restroom),
-                            _buildRoleTab(3, 'الطالب', Icons.person),
+                            _buildRoleTab(0, 'المعلم', Icons.school),
+                            _buildRoleTab(1, 'ولي الأمر', Icons.family_restroom),
+                            _buildRoleTab(2, 'الطالب', Icons.person),
                           ],
                         ),
                       ),
@@ -422,58 +396,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                       // محتوى النموذج حسب الدور المختار
                       if (_userType == 0) ...[
-                        // ===== واجهة المدير العام =====
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF103D32).withAlpha(15),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(AppColors.goldAccent).withAlpha(120)),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.shield, color: Color(0xFF103D32), size: 24),
-                              SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  '👑 بوابة المدير العام: تحكم كامل وشامل بجميع الحلقات، المعلمين، الطلاب، الاختبارات، والتقارير المالية والإدارية',
-                                  style: TextStyle(
-                                    fontFamily: 'Cairo',
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF103D32),
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _adminEmailController,
-                          keyboardType: TextInputType.emailAddress,
-                          textDirection: TextDirection.ltr,
-                          decoration: const InputDecoration(
-                            labelText: 'البريد الإلكتروني للمدير العام',
-                            prefixIcon: Icon(Icons.email_outlined),
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        TextFormField(
-                          controller: _adminPasswordController,
-                          textDirection: TextDirection.ltr,
-                          decoration: InputDecoration(
-                            labelText: 'كلمة مرور المدير العام',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                            ),
-                          ),
-                          obscureText: _obscurePassword,
-                        ),
-                      ] else if (_userType == 1) ...[
                         // ===== واجهة المعلم =====
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -569,7 +491,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             obscureText: _obscurePassword,
                           ),
                         ],
-                      ] else if (_userType == 2) ...[
+                      ] else if (_userType == 1) ...[
                         // ===== واجهة ولي الأمر: الدخول برقم الجوال =====
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -615,7 +537,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           style: const TextStyle(fontFamily: 'Cairo'),
                         ),
-                      ] else if (_userType == 3) ...[
+                      ] else if (_userType == 2) ...[
                         // ===== واجهة الطالب: الدخول برقم الطالب أو اسمه =====
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -671,7 +593,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: ElevatedButton(
                           onPressed: _isLoading ? null : _handleUserLogin,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _userType == 0 ? const Color(0xFF103D32) : const Color(AppColors.primaryGreen),
+                            backgroundColor: const Color(AppColors.primaryGreen),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           ),
@@ -683,12 +605,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 )
                               : Text(
                                   _userType == 0
-                                      ? 'دخول لوحة تحكم المدير العام'
+                                      ? 'تسجيل دخول المعلم'
                                       : _userType == 1
-                                          ? 'تسجيل دخول المعلم'
-                                          : _userType == 2
-                                              ? 'دخول ولي الأمر'
-                                              : 'دخول الطالب',
+                                          ? 'دخول ولي الأمر'
+                                          : 'دخول الطالب',
                                   style: const TextStyle(
                                     fontFamily: 'Cairo',
                                     fontSize: 15,
@@ -699,60 +619,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 18),
 
-                      // روابط تنزيل تطبيقات الجوال الرسمية
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final uri = Uri.parse('admin.apk');
-                                if (await canLaunchUrl(uri)) {
-                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                }
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(AppColors.goldAccent), width: 1.5),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              icon: const Icon(Icons.admin_panel_settings, size: 16, color: Color(AppColors.primaryGreenDark)),
-                              label: const Text(
-                                'تطبيق المدير (APK)',
-                                style: TextStyle(
-                                  fontFamily: 'Cairo',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                  color: Color(AppColors.primaryGreenDark),
-                                ),
-                              ),
+                      // زر تنزيل تطبيق الحلقات للجوال
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final uri = Uri.parse('app-release.apk');
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                            }
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey.shade400, width: 1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          icon: const Icon(Icons.android, size: 20, color: Color(AppColors.primaryGreenDark)),
+                          label: const Text(
+                            '📲 تنزيل تطبيق الحلقات للجوال (APK)',
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(AppColors.primaryGreenDark),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () async {
-                                final uri = Uri.parse('app-release.apk');
-                                if (await canLaunchUrl(uri)) {
-                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                }
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.grey.shade400, width: 1),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              icon: const Icon(Icons.school, size: 16, color: Colors.black87),
-                              label: const Text(
-                                'تطبيق الحلقات (APK)',
-                                style: TextStyle(
-                                  fontFamily: 'Cairo',
-                                  fontSize: 11,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
@@ -772,28 +664,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         onTap: () => setState(() => _userType = type),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+          padding: const EdgeInsets.symmetric(vertical: 9),
           decoration: BoxDecoration(
-            color: isSelected ? (type == 0 ? const Color(0xFF103D32) : const Color(AppColors.primaryGreen)) : Colors.transparent,
+            color: isSelected ? const Color(AppColors.primaryGreen) : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                size: 18,
+                size: 17,
                 color: isSelected ? Colors.white : Colors.grey.shade700,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(width: 6),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: 'Cairo',
-                  fontSize: 10.5,
+                  fontSize: 12,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   color: isSelected ? Colors.white : Colors.grey.shade700,
                 ),
