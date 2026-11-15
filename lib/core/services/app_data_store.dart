@@ -16,6 +16,7 @@ import '../../data/models/announcement_model.dart';
 import '../../data/models/achievement_model.dart';
 import '../../data/models/islamic_text_model.dart';
 import '../../data/models/quran_progress_model.dart';
+import 'firebase_sync_service.dart';
 
 /// مخزن البيانات التفاعلي الشامل للمنظومة
 /// يوفر إدارة الحالة والبيانات لجميع أقسام المنظومة
@@ -264,6 +265,7 @@ class AppDataStore extends ChangeNotifier {
     circles.insert(0, circle);
     notifyListeners();
     _saveToStorage();
+    FirebaseSyncService.instance.syncCircle(circle);
   }
 
   void updateCircle(CircleModel updated) {
@@ -272,6 +274,7 @@ class AppDataStore extends ChangeNotifier {
       circles[index] = updated;
       notifyListeners();
       _saveToStorage();
+      FirebaseSyncService.instance.syncCircle(updated);
     }
   }
 
@@ -420,6 +423,7 @@ class AppDataStore extends ChangeNotifier {
     );
     notifyListeners();
     _saveToStorage();
+    FirebaseSyncService.instance.syncStudent(student);
   }
 
   void updateStudent(StudentModel updated) {
@@ -428,6 +432,7 @@ class AppDataStore extends ChangeNotifier {
       students[index] = updated;
       notifyListeners();
       _saveToStorage();
+      FirebaseSyncService.instance.syncStudent(updated);
     }
   }
 
@@ -521,6 +526,7 @@ class AppDataStore extends ChangeNotifier {
             a.date.day == rec.date.day,
       );
       attendanceRecords.insert(0, rec);
+      FirebaseSyncService.instance.syncAttendance(rec);
     }
     notifyListeners();
   }
@@ -571,6 +577,7 @@ class AppDataStore extends ChangeNotifier {
   void addFeePayment(FeeModel fee) {
     fees.insert(0, fee);
     notifyListeners();
+    FirebaseSyncService.instance.syncFee(fee);
   }
 
   // ===== الإعلانات =====

@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'app.dart';
 import 'firebase_options.dart';
 import 'core/services/local_database_service.dart';
+import 'core/services/firebase_sync_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,8 +38,9 @@ Future<void> main() async {
   // تهيئة قاعدة البيانات المحلية
   try {
     await LocalDatabaseService.instance.init();
+    await FirebaseSyncService.instance.init();
   } catch (e) {
-    debugPrint('LocalDatabase safe fallback: $e');
+    debugPrint('LocalDatabase/Firebase safe fallback: $e');
   }
 
   runApp(

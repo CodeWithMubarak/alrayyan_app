@@ -53,6 +53,7 @@ dependencies:
 
   # URL & Communication
   url_launcher: ^6.3.0
+  http: ^1.2.2
 
   # Storage
   shared_preferences: ^2.3.2

@@ -11,6 +11,7 @@ import '../../../../core/widgets/stat_card.dart';
 import '../../../../core/widgets/app_sidebar.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../core/widgets/quran_daily_verse_card.dart';
+import '../../../../core/services/update_service.dart';
 
 /// لوحة تحكم المدير العام
 class AdminDashboardScreen extends ConsumerStatefulWidget {
@@ -24,6 +25,14 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   int _selectedIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateService.instance.checkOnStartup(context);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveBreakpoints.of(context).isDesktop ||
         ResponsiveBreakpoints.of(context).isTablet;
@@ -34,6 +43,11 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           : AppBar(
               title: const Text(AppStrings.dashboard),
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.system_update_alt),
+                  tooltip: 'التحقق من التحديثات التلقائية',
+                  onPressed: () => UpdateService.instance.checkForUpdates(context),
+                ),
                 IconButton(
                   icon: const Icon(Icons.notifications_outlined),
                   onPressed: () => context.push(AppRoutes.notifications),
