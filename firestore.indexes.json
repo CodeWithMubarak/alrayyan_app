@@ -1,0 +1,46 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "attendance",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "circleId", "order": "ASCENDING"},
+        {"fieldPath": "date", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "attendance",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "studentId", "order": "ASCENDING"},
+        {"fieldPath": "date", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "memorization",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "studentId", "order": "ASCENDING"},
+        {"fieldPath": "date", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "students",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "circleId", "order": "ASCENDING"},
+        {"fieldPath": "status", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "fees",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "circleId", "order": "ASCENDING"},
+        {"fieldPath": "year", "order": "DESCENDING"},
+        {"fieldPath": "month", "order": "DESCENDING"}
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
