@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_routes.dart';
@@ -328,12 +329,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           child: ClipOval(
                             child: Image.asset(
-                              'assets/images/logo.jpg',
+                              'assets/icons/app_icon.png',
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const Icon(
-                                Icons.mosque,
-                                size: 45,
-                                color: Color(AppColors.primaryGreen),
+                              errorBuilder: (_, __, ___) => Image.asset(
+                                'assets/images/logo.jpg',
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.mosque,
+                                  size: 45,
+                                  color: Color(AppColors.primaryGreen),
+                                ),
                               ),
                             ),
                           ),
@@ -599,6 +604,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+
+                      // زر تحميل تطبيق الأندرويد للجوال مباشرة
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final uri = Uri.parse('app-release.apk');
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(AppColors.goldAccent), width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                        ),
+                        icon: const Icon(Icons.android, color: Color(AppColors.primaryGreenDark)),
+                        label: const Text(
+                          '📲 تنزيل تطبيق الأندرويد للجوال (APK)',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: Color(AppColors.primaryGreenDark),
+                          ),
                         ),
                       ),
                     ],

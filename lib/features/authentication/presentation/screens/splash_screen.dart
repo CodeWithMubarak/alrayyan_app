@@ -78,12 +78,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
                   ),
                   child: ClipOval(
                     child: Image.asset(
-                      'assets/images/logo.jpg',
+                      'assets/icons/app_icon.png',
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.mosque,
-                        size: 70,
-                        color: Color(AppColors.primaryGreenDark),
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/images/logo.jpg',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.mosque,
+                          size: 70,
+                          color: Color(AppColors.primaryGreenDark),
+                        ),
                       ),
                     ),
                   ),
