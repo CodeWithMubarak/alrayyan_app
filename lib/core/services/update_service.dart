@@ -54,8 +54,7 @@ class UpdateService {
           }
         }
 
-        final rawHtmlUrl = data['html_url'] as String?;
-        final String finalDownloadUrl = downloadUrl ?? rawHtmlUrl ?? 'https://github.com/$githubOwner/$githubRepo/releases/latest';
+        final String finalDownloadUrl = downloadUrl ?? (data['html_url'] as String?) ?? 'https://github.com/$githubOwner/$githubRepo/releases/latest';
 
         if (_isNewerVersion(latestTag, currentVersion)) {
           if (!context.mounted) return;
@@ -187,3 +186,4 @@ class UpdateService {
     );
   }
 }
+
