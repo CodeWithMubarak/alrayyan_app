@@ -27,6 +27,8 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
   final _guardianPhone2Controller = TextEditingController();
   final _addressController = TextEditingController(text: 'تريم - دمون');
   final _notesController = TextEditingController();
+  final _studentPasswordController = TextEditingController(text: '123456');
+  final _guardianPasswordController = TextEditingController(text: '123456');
 
   String? _selectedCircleId;
   String? _selectedCircleName;
@@ -58,6 +60,8 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
     _guardianPhone2Controller.dispose();
     _addressController.dispose();
     _notesController.dispose();
+    _studentPasswordController.dispose();
+    _guardianPasswordController.dispose();
     super.dispose();
   }
 
@@ -89,6 +93,8 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
         guardianPhone2: _guardianPhone2Controller.text.trim(),
         address: _addressController.text.trim(),
         adminNotes: _notesController.text.trim(),
+        password: _studentPasswordController.text.trim().isNotEmpty ? _studentPasswordController.text.trim() : '123456',
+        guardianPassword: _guardianPasswordController.text.trim().isNotEmpty ? _guardianPasswordController.text.trim() : '123456',
         createdAt: DateTime.now(),
       );
 
@@ -327,6 +333,56 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
                       decoration: const InputDecoration(
                         labelText: 'عنوان السكن والملاحظات',
                         prefixIcon: Icon(Icons.location_on),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // إعدادات قواعد الأمان وكلمات المرور
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(AppColors.primaryGreen).withAlpha(12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(AppColors.primaryGreen).withAlpha(40)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.security, color: Color(AppColors.primaryGreen), size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'قواعد الأمان وبيانات تسجيل الدخول (خاص بالإدارة)',
+                                style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _studentPasswordController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'كلمة مرور الطالب',
+                                    prefixIcon: Icon(Icons.lock_outline),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _guardianPasswordController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'كلمة مرور ولي الأمر',
+                                    prefixIcon: Icon(Icons.lock_person),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 28),

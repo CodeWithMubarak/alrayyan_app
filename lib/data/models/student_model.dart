@@ -18,6 +18,8 @@ class StudentModel {
   final String? address;
   final String? adminNotes;
   final String? educationalNotes;
+  final String? password;
+  final String? guardianPassword;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final String? createdBy;
@@ -41,6 +43,8 @@ class StudentModel {
     this.address,
     this.adminNotes,
     this.educationalNotes,
+    this.password = '123456',
+    this.guardianPassword = '123456',
     required this.createdAt,
     this.updatedAt,
     this.createdBy,
@@ -66,6 +70,8 @@ class StudentModel {
       address: map['address'],
       adminNotes: map['adminNotes'],
       educationalNotes: map['educationalNotes'],
+      password: map['password'] ?? '123456',
+      guardianPassword: map['guardianPassword'] ?? '123456',
       createdAt: map['createdAt'] != null ? DateTime.tryParse(map['createdAt'].toString()) ?? DateTime.now() : DateTime.now(),
       updatedAt: map['updatedAt'] != null ? DateTime.tryParse(map['updatedAt'].toString()) : null,
       createdBy: map['createdBy'],
@@ -91,6 +97,8 @@ class StudentModel {
       'address': address,
       'adminNotes': adminNotes,
       'educationalNotes': educationalNotes,
+      'password': password ?? '123456',
+      'guardianPassword': guardianPassword ?? '123456',
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'createdBy': createdBy,

@@ -32,10 +32,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _circlePassController = TextEditingController(text: '4K8B9Z');
 
   // حقول الدخول لولي الأمر (برقم الجوال)
-  final _guardianPhoneController = TextEditingController();
+  final _guardianPhoneController = TextEditingController(text: '770123456');
+  final _guardianPasswordController = TextEditingController(text: '123456');
 
   // حقول الدخول للطالب (برقم الطالب أو اسمه)
-  final _studentNumberController = TextEditingController();
+  final _studentNumberController = TextEditingController(text: '2024001');
+  final _studentPasswordController = TextEditingController(text: '123456');
 
   bool _obscurePassword = true;
   bool _isLoading = false;
@@ -53,8 +55,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _circleCodeController.dispose();
     _circlePassController.dispose();
     _guardianPhoneController.dispose();
+    _guardianPasswordController.dispose();
     _studentNumberController.dispose();
+    _studentPasswordController.dispose();
     super.dispose();
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontFamily: 'Cairo')),
+        backgroundColor: const Color(AppColors.error),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _handleUserLogin() async {
@@ -70,84 +84,114 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         final email = _teacherEmailController.text.trim().toLowerCase();
         final pass = _teacherPasswordController.text.trim();
 
+        if (email.isEmpty || pass.isEmpty) {
+          setState(() => _isLoading = false);
+          _showError('يرجى إدخال البريد الإلكتروني أو رقم الهاتف وكلمة المرور');
+          return;
+        }
+
         // تحويل ذكي: إذا أدخل المدير بياناته هنا، يسجل دخوله كمدير عام
         if (email == officialAdminEmail.toLowerCase() && pass == officialAdminPassword) {
           _loginAsAdmin(store);
           return;
         }
 
-        // دخول المعلم بحسابه
-        store.currentUser = UserModel(
-          id: 'tch_01',
-          name: 'الأستاذ أحمد الحضرمي',
-          email: email.isNotEmpty ? email : 'teacher@alrayyan.com',
-          role: UserRole.teacher,
-          assignedCircleIds: store.circles.isNotEmpty ? [store.circles.first.id] : [],
-          createdAt: DateTime.now(),
+        // فحص صارم: البحث في المستخدمين المسجلين كمعلمين فقط
+        final teacher = store.users.cast<UserModel?>().firstWhere(
+          (u) =>
+              u != null &&
+              u.role == UserRole.teacher &&
+              (u.email.toLowerCase() == email || (u.phone != null && u.phone!.trim() == email)),
+          orElse: () => null,
         );
+
+        if (teacher == null) {
+          setState(() => _isLoading = false);
+          _showError('هذا الحساب غير مسجل كمعلم في النظام. يرجى من إدارة المسجد إضافتك أولاً.');
+          return;
+        }
+
+        if ((teacher.password ?? '123456') != pass) {
+          setState(() => _isLoading = false);
+          _showError('كلمة المرور غير صحيحة. يرجى مراجعة إدارة المسجد.');
+          return;
+        }
+
+        // دخول المعلم بحسابه المعتمد
+        store.currentUser = teacher;
         setState(() => _isLoading = false);
         context.go(AppRoutes.dashboard);
       } else {
         // دخول المعلم بكود الحلقة الموزع له من المدير
-        final code = _circleCodeController.text.trim();
+        final code = _circleCodeController.text.trim().toUpperCase();
         final pass = _circlePassController.text.trim();
 
-        final circle = store.findCircleByCode(code);
-        if (circle != null && circle.accessPassword == pass) {
-          store.currentUser = UserModel(
-            id: circle.teacherId.isNotEmpty ? circle.teacherId : 'tch_${circle.id}',
-            name: circle.teacherName.isNotEmpty ? circle.teacherName : 'مدرس ${circle.name}',
-            email: '${circle.circleCode.toLowerCase()}@alrayyan.com',
-            role: UserRole.teacher,
-            assignedCircleIds: [circle.id],
-            createdAt: DateTime.now(),
-          );
+        if (code.isEmpty || pass.isEmpty) {
           setState(() => _isLoading = false);
-          context.go(AppRoutes.dashboard);
-        } else {
-          setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'كود الحلقة أو كلمة المرور غير صحيحة، يرجى مراجعة إدارة المسجد',
-                style: TextStyle(fontFamily: 'Cairo'),
-              ),
-              backgroundColor: Color(AppColors.error),
-            ),
-          );
+          _showError('يرجى إدخال كود الحلقة وكلمة المرور');
+          return;
         }
+
+        final circle = store.findCircleByCode(code);
+        if (circle == null) {
+          setState(() => _isLoading = false);
+          _showError('كود الحلقة ($code) غير مسجل في النظام. يرجى مراجعة إدارة المسجد.');
+          return;
+        }
+
+        if (circle.accessPassword != pass) {
+          setState(() => _isLoading = false);
+          _showError('كلمة مرور الحلقة غير صحيحة. يرجى مراجعة إدارة المسجد.');
+          return;
+        }
+
+        store.currentUser = UserModel(
+          id: circle.teacherId.isNotEmpty ? circle.teacherId : 'tch_${circle.id}',
+          name: circle.teacherName.isNotEmpty ? circle.teacherName : 'مدرس ${circle.name}',
+          email: '${circle.circleCode.toLowerCase()}@alrayyan.com',
+          role: UserRole.teacher,
+          assignedCircleIds: [circle.id],
+          createdAt: DateTime.now(),
+        );
+        setState(() => _isLoading = false);
+        context.go(AppRoutes.dashboard);
       }
     } else if (_userType == 1) {
-      // ===== ولي الأمر: تسجيل الدخول برقم الجوال =====
+      // ===== ولي الأمر: تسجيل الدخول برقم الجوال وكلمة المرور مع فحص أمني حقيقي =====
       final phone = _guardianPhoneController.text.trim();
+      final pass = _guardianPasswordController.text.trim();
 
-      // البحث عن الطلاب المرتبطين برقم جوال ولي الأمر
-      final matchingStudents = store.students.where((s) {
-        if (phone.isEmpty) return false;
-        final p1 = s.guardianPhone.trim().replaceAll(' ', '');
-        final p2 = s.guardianPhone2?.trim().replaceAll(' ', '') ?? '';
-        final target = phone.replaceAll(' ', '');
-        return p1 == target || (p2.isNotEmpty && p2 == target);
-      }).toList();
-
-      if (phone.isNotEmpty && matchingStudents.isEmpty && store.students.isNotEmpty) {
+      if (phone.isEmpty || pass.isEmpty) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'لم يتم العثور على طالب مسجل برقم الجوال ($phone). يرجى مراجعة إدارة المسجد.',
-              style: const TextStyle(fontFamily: 'Cairo'),
-            ),
-            backgroundColor: const Color(AppColors.error),
-          ),
-        );
+        _showError('يرجى إدخال رقم جوال ولي الأمر وكلمة المرور');
         return;
       }
 
-      final guardianName = matchingStudents.isNotEmpty ? matchingStudents.first.guardianName : 'ولي الأمر';
+      // البحث عن الطلاب المرتبطين برقم جوال ولي الأمر
+      final target = phone.replaceAll(' ', '');
+      final matchingStudents = store.students.where((s) {
+        final p1 = s.guardianPhone.trim().replaceAll(' ', '');
+        final p2 = s.guardianPhone2?.trim().replaceAll(' ', '') ?? '';
+        return p1 == target || (p2.isNotEmpty && p2 == target);
+      }).toList();
 
+      if (matchingStudents.isEmpty) {
+        setState(() => _isLoading = false);
+        _showError('لم يتم العثور على أي طالب مسجل برقم الجوال ($phone). يرجى مراجعة إدارة المسجد.');
+        return;
+      }
+
+      // مطابقة كلمة المرور المعتمدة
+      final isPasswordCorrect = matchingStudents.any((s) => (s.guardianPassword ?? '123456') == pass);
+      if (!isPasswordCorrect) {
+        setState(() => _isLoading = false);
+        _showError('كلمة المرور غير صحيحة لولي الأمر. يرجى التأكد أو مراجعة إدارة المسجد.');
+        return;
+      }
+
+      final guardianName = matchingStudents.first.guardianName;
       store.currentUser = UserModel(
-        id: 'parent_${phone.isNotEmpty ? phone : "default"}',
+        id: 'parent_${matchingStudents.first.id}',
         name: guardianName.isNotEmpty ? guardianName : 'ولي الأمر',
         email: 'parent@alrayyan.com',
         phone: phone,
@@ -156,68 +200,70 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
 
       setState(() => _isLoading = false);
-      if (matchingStudents.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'أهلاً بك يا $guardianName • متابعة: ${matchingStudents.map((s) => s.fullName).join("، ")}',
-              style: const TextStyle(fontFamily: 'Cairo'),
-            ),
-            backgroundColor: const Color(AppColors.primaryGreen),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'أهلاً بك يا $guardianName • متابعة: ${matchingStudents.map((s) => s.fullName).join("، ")}',
+            style: const TextStyle(fontFamily: 'Cairo'),
           ),
-        );
-      }
+          backgroundColor: const Color(AppColors.primaryGreen),
+        ),
+      );
       context.go(AppRoutes.dashboard);
     } else if (_userType == 2) {
-      // ===== الطالب: تسجيل الدخول برقم الطالب أو اسمه =====
+      // ===== الطالب: تسجيل الدخول برقم الطالب أو اسمه مع كلمة المرور =====
       final input = _studentNumberController.text.trim().toLowerCase();
+      final pass = _studentPasswordController.text.trim();
+
+      if (input.isEmpty || pass.isEmpty) {
+        setState(() => _isLoading = false);
+        _showError('يرجى إدخال الرقم الأكاديمي أو اسم الطالب وكلمة المرور');
+        return;
+      }
 
       final matchingStudent = store.students.cast<StudentModel?>().firstWhere(
         (s) {
-          if (s == null || input.isEmpty) return false;
+          if (s == null) return false;
           final sNum = s.studentNumber.trim().toLowerCase();
           final sName = s.fullName.trim().toLowerCase();
-          return sNum == input || sName.contains(input);
+          return sNum == input || sName == input || sName.contains(input);
         },
         orElse: () => null,
       );
 
-      if (input.isNotEmpty && matchingStudent == null && store.students.isNotEmpty) {
+      if (matchingStudent == null) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'لم يتم العثور على طالب مسجل بالبيانات ($input). يرجى التأكد من الرقم أو الاسم.',
-              style: const TextStyle(fontFamily: 'Cairo'),
-            ),
-            backgroundColor: const Color(AppColors.error),
-          ),
-        );
+        _showError('الرقم الأكاديمي أو اسم الطالب ($input) غير مسجل في النظام. يرجى مراجعة إدارة المسجد.');
         return;
       }
 
-      final studentName = matchingStudent != null ? matchingStudent.fullName : 'الطالب';
+      // مطابقة كلمة المرور للطالب
+      if ((matchingStudent.password ?? '123456') != pass) {
+        setState(() => _isLoading = false);
+        _showError('كلمة المرور غير صحيحة للطالب. يرجى مراجعة المعلم أو إدارة المسجد.');
+        return;
+      }
 
+      final studentName = matchingStudent.fullName;
       store.currentUser = UserModel(
-        id: matchingStudent?.id ?? 'student_default',
+        id: matchingStudent.id,
         name: studentName,
         email: 'student@alrayyan.com',
         role: UserRole.student,
+        assignedCircleIds: [matchingStudent.circleId],
         createdAt: DateTime.now(),
       );
 
       setState(() => _isLoading = false);
-      if (matchingStudent != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'مرحباً بك يا $studentName في حلقة ${matchingStudent.circleName}',
-              style: const TextStyle(fontFamily: 'Cairo'),
-            ),
-            backgroundColor: const Color(AppColors.primaryGreen),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'مرحباً بك يا $studentName في حلقة ${matchingStudent.circleName}',
+            style: const TextStyle(fontFamily: 'Cairo'),
           ),
-        );
-      }
+          backgroundColor: const Color(AppColors.primaryGreen),
+        ),
+      );
       context.go(AppRoutes.dashboard);
     }
   }
@@ -461,6 +507,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                           style: const TextStyle(fontFamily: 'Cairo'),
                         ),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _guardianPasswordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'كلمة مرور ولي الأمر',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            ),
+                          ),
+                          style: const TextStyle(fontFamily: 'Cairo'),
+                        ),
                       ] else if (_userType == 2) ...[
                         // واجهة الطالب: الدخول برقم الطالب أو اسمه
                         Container(
@@ -489,6 +549,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             labelText: 'رقم الطالب أو اسمه (مثال: STU-2026-001)',
                             prefixIcon: Icon(Icons.badge_outlined),
                             hintText: 'أدخل رقمك أو اسمك للبحث في المنظومة',
+                          ),
+                          style: const TextStyle(fontFamily: 'Cairo'),
+                        ),
+                        const SizedBox(height: 14),
+                        TextFormField(
+                          controller: _studentPasswordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'كلمة مرور الطالب',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            ),
                           ),
                           style: const TextStyle(fontFamily: 'Cairo'),
                         ),

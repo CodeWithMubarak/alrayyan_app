@@ -157,12 +157,59 @@ class AppDataStore extends ChangeNotifier {
       },
     );
 
+    // المستخدمون
     users.clear();
     users.add(currentUser!);
 
-    // بيانات الحلقات تبدأ من الصفر تماماً
+    // بيانات أولية معتمدة قابلة للتعديل والإضافة من قبل المدير
+    users.add(UserModel(
+      id: 'tch_01',
+      name: 'الأستاذ أحمد الحضرمي',
+      email: 'teacher@alrayyan.com',
+      role: UserRole.teacher,
+      phone: '770000001',
+      password: '123456',
+      assignedCircleIds: ['crc_01'],
+      createdAt: now,
+      permissions: {'canAddStudent': false},
+    ));
+
+    // حلقة البداية المعتمدة
     circles.clear();
+    circles.add(CircleModel(
+      id: 'crc_01',
+      name: 'حلقة الإمام الشاطبي',
+      circleCode: 'RYN-101',
+      accessPassword: '123456',
+      teacherId: 'tch_01',
+      teacherName: 'الأستاذ أحمد الحضرمي',
+      level: 'المستوى المتقدم',
+      stage: 'المرحلة المتوسطة',
+      studyDays: const ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء'],
+      startTime: '16:00',
+      endTime: '17:30',
+      location: 'مسجد الريان - الجناح الشرقي',
+      createdAt: now,
+    ));
+
+    // طالب افتراضي معتمد
     students.clear();
+    students.add(StudentModel(
+      id: 'std_01',
+      studentNumber: '2024001',
+      fullName: 'محمد سالم باعباد',
+      circleId: 'crc_01',
+      circleName: 'حلقة الإمام الشاطبي',
+      level: 'المستوى المتقدم',
+      guardianName: 'سالم باعباد',
+      guardianRelation: 'الأب',
+      guardianPhone: '770123456',
+      password: '123456',
+      guardianPassword: '123456',
+      enrollmentDate: now,
+      createdAt: now,
+    ));
+
     attendanceRecords.clear();
     memorizationRecords.clear();
     fees.clear();
@@ -379,6 +426,74 @@ class AppDataStore extends ChangeNotifier {
     final index = students.indexWhere((s) => s.id == updated.id);
     if (index != -1) {
       students[index] = updated;
+      notifyListeners();
+      _saveToStorage();
+    }
+  }
+
+  void updateStudentPassword(String studentId, String newPassword) {
+    final index = students.indexWhere((s) => s.id == studentId);
+    if (index != -1) {
+      final s = students[index];
+      students[index] = StudentModel(
+        id: s.id,
+        studentNumber: s.studentNumber,
+        fullName: s.fullName,
+        photoUrl: s.photoUrl,
+        birthDate: s.birthDate,
+        enrollmentDate: s.enrollmentDate,
+        circleId: s.circleId,
+        circleName: s.circleName,
+        level: s.level,
+        status: s.status,
+        guardianName: s.guardianName,
+        guardianRelation: s.guardianRelation,
+        guardianPhone: s.guardianPhone,
+        guardianPhone2: s.guardianPhone2,
+        address: s.address,
+        adminNotes: s.adminNotes,
+        educationalNotes: s.educationalNotes,
+        password: newPassword,
+        guardianPassword: s.guardianPassword,
+        createdAt: s.createdAt,
+        updatedAt: DateTime.now(),
+        createdBy: s.createdBy,
+        updatedBy: s.updatedBy,
+      );
+      notifyListeners();
+      _saveToStorage();
+    }
+  }
+
+  void updateGuardianPassword(String studentId, String newPassword) {
+    final index = students.indexWhere((s) => s.id == studentId);
+    if (index != -1) {
+      final s = students[index];
+      students[index] = StudentModel(
+        id: s.id,
+        studentNumber: s.studentNumber,
+        fullName: s.fullName,
+        photoUrl: s.photoUrl,
+        birthDate: s.birthDate,
+        enrollmentDate: s.enrollmentDate,
+        circleId: s.circleId,
+        circleName: s.circleName,
+        level: s.level,
+        status: s.status,
+        guardianName: s.guardianName,
+        guardianRelation: s.guardianRelation,
+        guardianPhone: s.guardianPhone,
+        guardianPhone2: s.guardianPhone2,
+        address: s.address,
+        adminNotes: s.adminNotes,
+        educationalNotes: s.educationalNotes,
+        password: s.password,
+        guardianPassword: newPassword,
+        createdAt: s.createdAt,
+        updatedAt: DateTime.now(),
+        createdBy: s.createdBy,
+        updatedBy: s.updatedBy,
+      );
       notifyListeners();
       _saveToStorage();
     }

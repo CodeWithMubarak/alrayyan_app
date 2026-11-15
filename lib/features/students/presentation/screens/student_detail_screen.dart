@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_enums.dart';
 import '../../../../core/services/app_data_store.dart';
+import '../../../../data/models/student_model.dart';
 
 class StudentDetailScreen extends ConsumerWidget {
   final String studentId;
@@ -146,6 +147,44 @@ class StudentDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
+            // بيانات الأمان وتسجيل الدخول
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.security, color: Color(AppColors.goldDark), size: 20),
+                        SizedBox(width: 8),
+                        Text('بيانات الدخول وكلمات المرور', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 14)),
+                      ],
+                    ),
+                    const Divider(height: 20),
+                    _buildInfoRow('رقم دخول الطالب', student.studentNumber),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('كلمة مرور الطالب', student.password ?? '123456'),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('رقم هاتف ولي الأمر للدخول', student.guardianPhone),
+                    const SizedBox(height: 8),
+                    _buildInfoRow('كلمة مرور ولي الأمر', student.guardianPassword ?? '123456'),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => _showEditPasswordsDialog(context, student),
+                          icon: const Icon(Icons.edit, size: 16),
+                          label: const Text('تعديل كلمات المرور', style: TextStyle(fontFamily: 'Cairo', fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
             // إحصائيات الطالب التعليمية
             Card(
               child: Padding(
@@ -221,5 +260,62 @@ class StudentDetailScreen extends ConsumerWidget {
         SnackBar(content: Text('فتح محادثة واتساب مع: $phone', style: const TextStyle(fontFamily: 'Cairo'))),
       );
     }
+  }
+
+  void _showEditPasswordsDialog(BuildContext context, StudentModel student) {
+    final studentPassController = TextEditingController(text: student.password ?? '123456');
+    final guardianPassController = TextEditingController(text: student.guardianPassword ?? '123456');
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text('تعديل كلمات المرور: ${student.fullName}', style: const TextStyle(fontFamily: 'Cairo', fontSize: 16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: studentPassController,
+                decoration: const InputDecoration(
+                  labelText: 'كلمة مرور الطالب',
+                  prefixIcon: Icon(Icons.lock_outline),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: guardianPassController,
+                decoration: const InputDecoration(
+                  labelText: 'كلمة مرور ولي الأمر',
+                  prefixIcon: Icon(Icons.lock_person),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo')),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final sPass = studentPassController.text.trim();
+                final gPass = guardianPassController.text.trim();
+                AppDataStore.instance.updateStudentPassword(student.id, sPass.isNotEmpty ? sPass : '123456');
+                AppDataStore.instance.updateGuardianPassword(student.id, gPass.isNotEmpty ? gPass : '123456');
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('تم تحديث كلمات المرور بنجاح وحفظها', style: TextStyle(fontFamily: 'Cairo')),
+                    backgroundColor: Color(AppColors.success),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(AppColors.primaryGreen)),
+              child: const Text('حفظ التعديل', style: TextStyle(fontFamily: 'Cairo', color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
