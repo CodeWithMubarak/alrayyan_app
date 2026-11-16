@@ -41,10 +41,12 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
     final allUsers = store.users;
     final teachersCount = allUsers.where((u) => u.role == UserRole.teacher).length;
     final supervisorsCount = allUsers.where((u) => u.role == UserRole.supervisor).length;
+    final mediaCount = allUsers.where((u) => u.role == UserRole.media).length;
 
     // تصفية المستخدمين
     final filteredUsers = allUsers.where((u) {
       if (_selectedRoleFilter == 'teacher' && u.role != UserRole.teacher) return false;
+      if (_selectedRoleFilter == 'media' && u.role != UserRole.media) return false;
       if (_selectedRoleFilter == 'supervisor' && u.role != UserRole.supervisor) return false;
       if (_selectedRoleFilter == 'admin' && u.role != UserRole.admin) return false;
 
@@ -309,6 +311,8 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                 _buildFilterChip('الكل', 'all'),
                 const SizedBox(width: 8),
                 _buildFilterChip('المدرسون فقط', 'teacher'),
+                const SizedBox(width: 8),
+                _buildFilterChip('الإعلاميون', 'media'),
                 const SizedBox(width: 8),
                 _buildFilterChip('المشرفون', 'supervisor'),
                 const SizedBox(width: 8),
@@ -612,28 +616,44 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
 
             const SizedBox(height: 10),
 
-            // أزرار الإجراءات: تعديل كلمة المرور + إرسال عبر واتساب
-            Row(
+            // أزرار الإجراءات: تعديل كلمة المرور + إرسال عبر واتساب + إرسال عبر البريد
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 // زر تعديل كلمة المرور وقواعد الأمان
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(AppColors.primaryGreen),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(AppColors.primaryGreen),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.security_update_good, size: 16),
+                  label: const Text(
+                    'تعديل كلمة المرور',
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () => _showEditPasswordDialog(context, user, effectivePassword, userCircles),
+                ),
+
+                // زر إرسال عبر البريد الإلكتروني الحقيقي
+                if (user.email.isNotEmpty)
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(AppColors.primaryGreenDark),
+                      side: const BorderSide(color: Color(AppColors.primaryGreen)),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    icon: const Icon(Icons.security_update_good, size: 16),
+                    icon: const Icon(Icons.email_outlined, size: 16),
                     label: const Text(
-                      'تعديل وفق قواعد الأمان',
+                      'إرسال بالبريد',
                       style: TextStyle(fontFamily: 'Cairo', fontSize: 11, fontWeight: FontWeight.bold),
                     ),
-                    onPressed: () => _showEditPasswordDialog(context, user, effectivePassword, userCircles),
+                    onPressed: () => _shareViaEmail(user, effectivePassword, userCircles),
                   ),
-                ),
-                const SizedBox(width: 8),
 
                 // زر إرسال عبر واتساب
                 if (user.phone != null && user.phone!.isNotEmpty)
@@ -943,13 +963,17 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                             SnackBar(
                               content: Text('تم تحديث كلمة المرور لـ (${user.name}) بنجاح ومزامنة الحلقات', style: const TextStyle(fontFamily: 'Cairo')),
                               backgroundColor: const Color(AppColors.primaryGreen),
-                              action: user.phone != null && user.phone!.isNotEmpty
-                                  ? SnackBarAction(
-                                      label: 'إرسال عبر واتساب',
-                                      textColor: Colors.white,
-                                      onPressed: () => _shareViaWhatsApp(user, newPass, userCircles),
-                                    )
-                                  : null,
+                              action: SnackBarAction(
+                                label: user.email.isNotEmpty ? 'إرسال بالبريد' : 'إرسال واتساب',
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  if (user.email.isNotEmpty) {
+                                    _shareViaEmail(user, newPass, userCircles);
+                                  } else {
+                                    _shareViaWhatsApp(user, newPass, userCircles);
+                                  }
+                                },
+                              ),
                             ),
                           );
                         },
@@ -1031,6 +1055,58 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('تم نسخ نص الرسالة للحافظة لتعذر فتح واتساب تلقائياً', style: TextStyle(fontFamily: 'Cairo')),
+          ),
+        );
+      }
+    }
+  }
+
+  // =================== إرسال كلمة المرور إلى البريد الإلكتروني الحقيقي للمستخدم ===================
+  void _shareViaEmail(UserModel user, String password, List<CircleModel> userCircles) async {
+    final email = user.email.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لا يوجد بريد إلكتروني مسجل لهذا الحساب', style: TextStyle(fontFamily: 'Cairo')),
+          backgroundColor: Color(AppColors.error),
+        ),
+      );
+      return;
+    }
+
+    final roleTitle = user.role.displayName;
+    final circleInfo = userCircles.isNotEmpty
+        ? 'الحلقة المسندة: ${userCircles.first.name} (رمز الدخول: ${userCircles.first.circleCode})\n'
+        : '';
+
+    final subject = 'بيانات دخول منصة حلقات مسجد الريان - تريم دمون';
+    final body = 'السلام عليكم ورحمة الله وبركاته،\nالأخ الفاضل/ ${user.name} المحترم\n\n'
+        'تحية طيبة وبعد،،\n\n'
+        'تم تحديد بيانات الدخول الخاصة بكم في منصة حلقات مسجد الريان بتريم دمون:\n'
+        '• المسمى / الدور: $roleTitle\n'
+        '$circleInfo'
+        '• البريد الإلكتروني المعتمد للدخول: $email\n'
+        '• كلمة المرور الخاصة بكم: $password\n\n'
+        'يرجى استخدام البريد وكلمة المرور أعلاه لتسجيل الدخول إلى بوابتكم الخاصة.\n'
+        'مع تحيات إدارة حلقات مسجد الريان - تريم دمون.';
+
+    final mailtoUri = Uri(
+      scheme: 'mailto',
+      path: email,
+      queryParameters: {
+        'subject': subject,
+        'body': body,
+      },
+    );
+
+    try {
+      await launchUrl(mailtoUri);
+    } catch (_) {
+      if (mounted) {
+        Clipboard.setData(ClipboardData(text: 'إلى: $email\nالموضوع: $subject\n\n$body'));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم نسخ رسالة البريد للحافظة لتعذر فتح تطبيق البريد تلقائياً', style: TextStyle(fontFamily: 'Cairo')),
           ),
         );
       }
@@ -1137,6 +1213,10 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                         DropdownMenuItem(
                           value: UserRole.teacher,
                           child: Text('معلم حلقة قرآنية', style: TextStyle(fontFamily: 'Cairo')),
+                        ),
+                        DropdownMenuItem(
+                          value: UserRole.media,
+                          child: Text('مسؤول إعلامي ونشر', style: TextStyle(fontFamily: 'Cairo')),
                         ),
                         DropdownMenuItem(
                           value: UserRole.supervisor,

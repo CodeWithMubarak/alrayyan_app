@@ -43,6 +43,7 @@ class AppSidebar extends ConsumerWidget {
     final isTeacher = user?.role == UserRole.teacher;
     final isParent = user?.role == UserRole.parent;
     final isStudent = user?.role == UserRole.student;
+    final isMedia = user?.role == UserRole.media;
 
     return Column(
       children: [
@@ -216,6 +217,40 @@ class AppSidebar extends ConsumerWidget {
                   label: 'الإعلانات والأنشطة',
                   route: AppRoutes.notifications,
                   isSelected: currentLocation.startsWith(AppRoutes.notifications),
+                ),
+              ] else if (isMedia) ...[
+                // بوابة المسؤول الإعلامي المستقلة تماماً
+                _buildNavItem(
+                  context,
+                  icon: Icons.campaign_outlined,
+                  selectedIcon: Icons.campaign,
+                  label: 'بوابة الإعلام والنشر',
+                  route: AppRoutes.mediaDashboard,
+                  isSelected: currentLocation == AppRoutes.mediaDashboard || currentLocation == AppRoutes.dashboard,
+                ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.announcement_outlined,
+                  selectedIcon: Icons.announcement,
+                  label: 'مركز الإعلانات والتعاميم',
+                  route: AppRoutes.notifications,
+                  isSelected: currentLocation.startsWith(AppRoutes.notifications),
+                ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.emoji_events_outlined,
+                  selectedIcon: Icons.emoji_events,
+                  label: 'لوحة الشرف والأوسمة',
+                  route: AppRoutes.achievements,
+                  isSelected: currentLocation.startsWith(AppRoutes.achievements),
+                ),
+                _buildNavItem(
+                  context,
+                  icon: Icons.menu_book_sharp,
+                  selectedIcon: Icons.menu_book,
+                  label: 'المتون العلمية',
+                  route: AppRoutes.islamicTexts,
+                  isSelected: currentLocation.startsWith(AppRoutes.islamicTexts),
                 ),
               ] else ...[
                 // المدير العام فقط يرى كافة الصلاحيات والأقسام الإدارية والمالية

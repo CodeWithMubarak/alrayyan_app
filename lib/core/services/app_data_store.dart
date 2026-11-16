@@ -27,6 +27,60 @@ class AppDataStore extends ChangeNotifier {
     _loadFromStorage();
   }
 
+  // بيانات مدير النظام الرسمية القابلة للتحديث من داخل المنظومة
+  static const String defaultAdminEmail = 'hymdyhmbarksyd@gmail.com';
+  static const String defaultAdminPassword = 'salm778157798';
+
+  String _adminEmail = defaultAdminEmail;
+  String _adminPassword = defaultAdminPassword;
+
+  String get adminEmail => _adminEmail;
+  String get adminPassword => _adminPassword;
+
+  Future<void> updateAdminPassword(String newPassword) async {
+    _adminPassword = newPassword;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('alrayyan_admin_password', newPassword);
+
+      final adminIndex = users.indexWhere((u) => u.email.toLowerCase() == _adminEmail.toLowerCase() || u.role == UserRole.admin);
+      if (adminIndex != -1) {
+        users[adminIndex] = users[adminIndex].copyWith(password: newPassword, phone: newPassword);
+      }
+      if (currentUser?.role == UserRole.admin) {
+        currentUser = currentUser?.copyWith(password: newPassword, phone: newPassword);
+      }
+      await _saveToStorage();
+    } catch (e) {
+      debugPrint('Save admin password error: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> updateUserPassword(String userId, String newPassword) async {
+    final index = users.indexWhere((u) => u.id == userId);
+    if (index != -1) {
+      final user = users[index];
+      final updated = user.copyWith(
+        password: newPassword,
+        updatedAt: DateTime.now(),
+      );
+      users[index] = updated;
+
+      // إذا كان المستخدم مدرساً ولديه حلقات، نحدث كلمة مرور الحلقات المسندة إليه
+      for (int i = 0; i < circles.length; i++) {
+        final c = circles[i];
+        if (c.teacherId == userId || user.assignedCircleIds.contains(c.id)) {
+          circles[i] = c.copyWith(accessPassword: newPassword);
+          FirebaseSyncService.instance.syncCircle(circles[i]);
+        }
+      }
+
+      await _saveToStorage();
+      notifyListeners();
+    }
+  }
+
   Future<void> _saveToStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -36,6 +90,7 @@ class AppDataStore extends ChangeNotifier {
       await prefs.setString('alrayyan_circles', circlesJson);
       await prefs.setString('alrayyan_students', studentsJson);
       await prefs.setString('alrayyan_users', usersJson);
+      await prefs.setString('alrayyan_admin_password', _adminPassword);
     } catch (e) {
       debugPrint('Safe storage save: $e');
     }
@@ -44,6 +99,10 @@ class AppDataStore extends ChangeNotifier {
   Future<void> _loadFromStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final savedAdminPass = prefs.getString('alrayyan_admin_password');
+      if (savedAdminPass != null && savedAdminPass.isNotEmpty) {
+        _adminPassword = savedAdminPass;
+      }
       final circlesStr = prefs.getString('alrayyan_circles');
       if (circlesStr != null && circlesStr.isNotEmpty) {
         final List list = jsonDecode(circlesStr);
@@ -140,13 +199,14 @@ class AppDataStore extends ChangeNotifier {
   void _initializeDefaultData() {
     final now = DateTime.now();
 
-    // المدير العام الرسمي
+    // مدير النظام الرسمي
     currentUser = UserModel(
       id: 'admin_official',
-      name: 'المدير العام',
-      email: 'hymdyhmbarksyd@gmail.com',
+      name: 'مدير النظام',
+      email: defaultAdminEmail,
       role: UserRole.admin,
-      phone: '77815779805',
+      phone: defaultAdminPassword,
+      password: defaultAdminPassword,
       isActive: true,
       createdAt: now,
       assignedCircleIds: [],
@@ -155,12 +215,29 @@ class AppDataStore extends ChangeNotifier {
         'canManageCircles': true,
         'canViewFees': true,
         'canApproveReports': true,
+        'canManageUsers': true,
+        'canManageSettings': true,
       },
     );
 
     // المستخدمون
     users.clear();
     users.add(currentUser!);
+
+    // مسؤول إعلامي معتمد
+    users.add(UserModel(
+      id: 'media_01',
+      name: 'المسؤول الإعلامي',
+      email: 'media@alrayyan.com',
+      role: UserRole.media,
+      phone: '770000002',
+      password: 'media123',
+      createdAt: now,
+      permissions: {
+        'canPublishAnnouncements': true,
+        'canManageMedia': true,
+      },
+    ));
 
     // بيانات أولية معتمدة قابلة للتعديل والإضافة من قبل المدير
     users.add(UserModel(
@@ -338,27 +415,6 @@ class AppDataStore extends ChangeNotifier {
     users.removeWhere((u) => u.id == userId);
     notifyListeners();
     _saveToStorage();
-  }
-
-  void updateUserPassword(String userId, String newPassword) {
-    final index = users.indexWhere((u) => u.id == userId);
-    if (index != -1) {
-      final user = users[index];
-      users[index] = user.copyWith(
-        password: newPassword,
-        updatedAt: DateTime.now(),
-      );
-
-      // مزامنة كلمة المرور مع الحلقات المرتبطة بهذا المعلم
-      for (int i = 0; i < circles.length; i++) {
-        final c = circles[i];
-        if (c.teacherId == userId || user.assignedCircleIds.contains(c.id)) {
-          circles[i] = c.copyWith(accessPassword: newPassword);
-        }
-      }
-      notifyListeners();
-      _saveToStorage();
-    }
   }
 
   void updateCirclePassword(String circleId, String newPassword) {

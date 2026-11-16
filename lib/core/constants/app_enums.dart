@@ -1,9 +1,10 @@
 /// أنواع المستخدمين والأدوار في النظام
 enum UserRole {
-  admin,       // مدير عام
+  admin,       // مدير عام / مدير النظام
   viceAdmin,   // نائب المدير
   supervisor,  // مشرف
   teacher,     // مدرس
+  media,       // مسؤول إعلامي
   parent,      // ولي أمر
   student,     // طالب
 }
@@ -12,13 +13,15 @@ extension UserRoleExtension on UserRole {
   String get displayName {
     switch (this) {
       case UserRole.admin:
-        return 'مدير عام';
+        return 'مدير النظام';
       case UserRole.viceAdmin:
         return 'نائب المدير';
       case UserRole.supervisor:
         return 'مشرف';
       case UserRole.teacher:
         return 'مدرس';
+      case UserRole.media:
+        return 'مسؤول إعلامي';
       case UserRole.parent:
         return 'ولي أمر';
       case UserRole.student:
@@ -36,6 +39,8 @@ extension UserRoleExtension on UserRole {
         return 'supervisor';
       case UserRole.teacher:
         return 'teacher';
+      case UserRole.media:
+        return 'media';
       case UserRole.parent:
         return 'parent';
       case UserRole.student:
@@ -53,6 +58,8 @@ extension UserRoleExtension on UserRole {
         return UserRole.supervisor;
       case 'teacher':
         return UserRole.teacher;
+      case 'media':
+        return UserRole.media;
       case 'parent':
         return UserRole.parent;
       case 'student':

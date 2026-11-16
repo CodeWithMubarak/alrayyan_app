@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/services/app_data_store.dart';
 
 /// شاشة الإعدادات
 class SettingsScreen extends ConsumerWidget {
@@ -65,11 +66,18 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
 
           // ===== النظام =====
-          _buildSection(context, 'إدارة النظام', [
+          _buildSection(context, 'إدارة النظام والأمان', [
+            _buildTile(context,
+              icon: Icons.key_outlined,
+              title: 'تغيير كلمة مرور مدير النظام',
+              subtitle: 'تحديث كلمة مرور الحساب الإداري (${AppDataStore.instance.adminEmail})',
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: () => _showChangeAdminPasswordDialog(context),
+            ),
             _buildTile(context,
               icon: Icons.people_outline,
               title: 'إدارة المستخدمين',
-              subtitle: 'إضافة وتعديل الحسابات',
+              subtitle: 'إضافة وتعديل الحسابات والصلاحيات',
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: () => context.push('/users'),
             ),
@@ -227,6 +235,200 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showChangeAdminPasswordDialog(BuildContext context) {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool obscureCurrent = true;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setModalState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(dialogCtx).viewInsets.bottom + 20,
+                left: 20,
+                right: 20,
+                top: 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(AppColors.primaryGreen).withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.key, color: Color(AppColors.primaryGreen), size: 24),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'تغيير كلمة مرور مدير النظام',
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Color(AppColors.primaryGreenDark),
+                                ),
+                              ),
+                              Text(
+                                'الحساب الرئيسي: hymdyhmbarksyd@gmail.com',
+                                style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: Colors.black54),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+
+                    // كلمة المرور الحالية
+                    TextField(
+                      controller: currentPasswordController,
+                      obscureText: obscureCurrent,
+                      decoration: InputDecoration(
+                        labelText: 'كلمة المرور الحالية لمدير النظام',
+                        prefixIcon: const Icon(Icons.lock_clock_outlined),
+                        suffixIcon: IconButton(
+                          icon: Icon(obscureCurrent ? Icons.visibility_off : Icons.visibility),
+                          onPressed: () => setModalState(() => obscureCurrent = !obscureCurrent),
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // كلمة المرور الجديدة
+                    TextField(
+                      controller: newPasswordController,
+                      obscureText: obscureNew,
+                      decoration: InputDecoration(
+                        labelText: 'كلمة المرور الجديدة',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility),
+                          onPressed: () => setModalState(() => obscureNew = !obscureNew),
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // تأكيد كلمة المرور الجديدة
+                    TextField(
+                      controller: confirmPasswordController,
+                      obscureText: obscureConfirm,
+                      decoration: InputDecoration(
+                        labelText: 'تأكيد كلمة المرور الجديدة',
+                        prefixIcon: const Icon(Icons.check_circle_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility),
+                          onPressed: () => setModalState(() => obscureConfirm = !obscureConfirm),
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(AppColors.primaryGreen),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        icon: const Icon(Icons.save),
+                        label: const Text(
+                          'تحديث وحفظ كلمة المرور الجديدة',
+                          style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        onPressed: () async {
+                          final currentPass = currentPasswordController.text.trim();
+                          final newPass = newPasswordController.text.trim();
+                          final confirmPass = confirmPasswordController.text.trim();
+
+                          final store = AppDataStore.instance;
+                          if (currentPass != store.adminPassword) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('كلمة المرور الحالية غير صحيحة!', style: TextStyle(fontFamily: 'Cairo')),
+                                backgroundColor: Color(AppColors.error),
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (newPass.length < 6) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('يجب أن تكون كلمة المرور 6 خانات على الأقل', style: TextStyle(fontFamily: 'Cairo')),
+                                backgroundColor: Color(AppColors.error),
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (newPass != confirmPass) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('كلمتا المرور غير متطابقتين!', style: TextStyle(fontFamily: 'Cairo')),
+                                backgroundColor: Color(AppColors.error),
+                              ),
+                            );
+                            return;
+                          }
+
+                          await store.updateAdminPassword(newPass);
+
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('تم تحديث وحفظ كلمة مرور مدير النظام بنجاح في المنظومة!', style: TextStyle(fontFamily: 'Cairo')),
+                              backgroundColor: Color(AppColors.primaryGreen),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

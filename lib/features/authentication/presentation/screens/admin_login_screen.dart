@@ -47,19 +47,22 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
     final email = _emailController.text.trim().toLowerCase();
     final pass = _passwordController.text.trim();
 
-    if (email == officialAdminEmail.toLowerCase() && pass == officialAdminPassword) {
+    if (email == store.adminEmail.toLowerCase() && pass == store.adminPassword) {
       store.currentUser = UserModel(
         id: 'admin_official',
-        name: 'المدير العام',
-        email: officialAdminEmail,
+        name: 'مدير النظام',
+        email: store.adminEmail,
         role: UserRole.admin,
-        phone: officialAdminPassword,
+        phone: store.adminPassword,
+        password: store.adminPassword,
         createdAt: DateTime.now(),
         permissions: {
           'canAddStudent': true,
           'canManageCircles': true,
           'canViewFees': true,
           'canApproveReports': true,
+          'canManageUsers': true,
+          'canManageSettings': true,
         },
       );
       setState(() => _isLoading = false);

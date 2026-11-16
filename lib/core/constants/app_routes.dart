@@ -13,6 +13,7 @@ class AppRoutes {
   static const String teacherDashboard = '/dashboard/teacher';
   static const String studentDashboard = '/dashboard/student';
   static const String parentDashboard = '/dashboard/parent';
+  static const String mediaDashboard = '/dashboard/media';
 
   // Islamic Texts & Achievements
   static const String islamicTexts = '/texts';

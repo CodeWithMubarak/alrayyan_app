@@ -20,11 +20,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // بيانات المدير العام الرسمية
-  static const String officialAdminEmail = 'hymdyhmbarksyd@gmail.com';
-  static const String officialAdminPassword = '77815779805';
-
-  // حقول الدخول بحساب المعلم
+  // حقول الدخول بحساب كادر المنظومة (معلم / إعلامي / مشرف / مدير)
   final _teacherEmailController = TextEditingController(text: 'teacher@alrayyan.com');
   final _teacherPasswordController = TextEditingController(text: '123456');
 
@@ -80,7 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!mounted) return;
 
     if (_userType == 0) {
-      // ===== المعلم =====
+      // ===== كادر المنظومة (المعلم / الإعلامي / المشرف / الإدارة) =====
       if (_teacherLoginMode == 0) {
         final email = _teacherEmailController.text.trim().toLowerCase();
         final pass = _teacherPasswordController.text.trim();
@@ -91,37 +87,44 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           return;
         }
 
-        // تحويل ذكي: إذا أدخل المدير بياناته هنا، يسجل دخوله كمدير عام
-        if (email == officialAdminEmail.toLowerCase() && pass == officialAdminPassword) {
+        // تحويل ذكي: إذا أدخل المدير العام بياناته الرسمية هنا، يسجل دخوله كمدير عام فوراً
+        if (email == store.adminEmail.toLowerCase() && pass == store.adminPassword) {
           _loginAsAdmin(store);
           return;
         }
 
-        // فحص صارم: البحث في المستخدمين المسجلين كمعلمين فقط
-        final teacher = store.users.cast<UserModel?>().firstWhere(
+        // فحص في مستخدمي المنظومة المسجلين (المعلمين، الإعلاميين، المشرفين، النواب)
+        final matchingStaff = store.users.cast<UserModel?>().firstWhere(
           (u) =>
               u != null &&
-              u.role == UserRole.teacher &&
               (u.email.toLowerCase() == email || (u.phone != null && u.phone!.trim() == email)),
           orElse: () => null,
         );
 
-        if (teacher == null) {
+        if (matchingStaff == null) {
           setState(() => _isLoading = false);
-          _showError('هذا الحساب غير مسجل كمعلم في النظام. يرجى من إدارة المسجد إضافتك أولاً.');
+          _showError('هذا الحساب غير مسجل في المنظومة. يرجى من مدير النظام إضافتك وتزويدك ببيانات الدخول.');
           return;
         }
 
-        if ((teacher.password ?? '123456') != pass) {
+        if ((matchingStaff.password ?? '123456') != pass) {
           setState(() => _isLoading = false);
-          _showError('كلمة المرور غير صحيحة. يرجى مراجعة إدارة المسجد.');
+          _showError('كلمة المرور غير صحيحة. يرجى مراجعة مدير النظام لإعادة ضبطها وإرسالها لبريدك.');
           return;
         }
 
-        // دخول المعلم بحسابه المعتمد
-        store.currentUser = teacher;
+        // دخول الكادر بحسابه المعتمد
+        store.currentUser = matchingStaff;
         setState(() => _isLoading = false);
-        context.go(AppRoutes.dashboard);
+
+        // التوجيه الذكي المباشر حسب دور المستخدم ومهمته المستقلة
+        if (matchingStaff.role == UserRole.media) {
+          context.go(AppRoutes.mediaDashboard);
+        } else if (matchingStaff.role == UserRole.teacher) {
+          context.go(AppRoutes.teacherDashboard);
+        } else {
+          context.go(AppRoutes.dashboard);
+        }
       } else {
         // دخول المعلم بكود الحلقة الموزع له من المدير
         final code = _circleCodeController.text.trim().toUpperCase();
@@ -273,9 +276,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     store.currentUser = UserModel(
       id: 'admin_official',
       name: 'المدير العام',
-      email: officialAdminEmail,
+      email: store.adminEmail,
       role: UserRole.admin,
-      phone: officialAdminPassword,
+      phone: store.adminPassword,
       createdAt: DateTime.now(),
       permissions: {
         'canAddStudent': true,
@@ -376,7 +379,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 22),
 
-                      // تبويبات المستخدمين العامة فقط (المعلم، ولي الأمر، الطالب)
+                      // تبويبات المستخدمين العامة فقط (الكادر/المعلم، ولي الأمر، الطالب)
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
@@ -386,7 +389,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         child: Row(
                           children: [
-                            _buildRoleTab(0, 'المعلم', Icons.school),
+                            _buildRoleTab(0, 'الكادر / المعلم', Icons.badge_outlined),
                             _buildRoleTab(1, 'ولي الأمر', Icons.family_restroom),
                             _buildRoleTab(2, 'الطالب', Icons.person),
                           ],
@@ -396,7 +399,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                       // محتوى النموذج حسب الدور المختار
                       if (_userType == 0) ...[
-                        // ===== واجهة المعلم =====
+                        // ===== واجهة كادر المنظومة (المعلم / الإعلامي / المشرف) =====
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -435,7 +438,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             textDirection: TextDirection.ltr,
                             decoration: const InputDecoration(
-                              labelText: 'البريد الإلكتروني للمعلم',
+                              labelText: 'البريد الإلكتروني الحقيقي أو الهاتف',
+                              hintText: 'مثال: media@alrayyan.com أو بريدك الشخصي',
+                              helperText: 'يتم إنشاء كلمة المرور لك وتزويدك بها من قبل مدير النظام',
                               prefixIcon: Icon(Icons.email_outlined),
                             ),
                           ),
@@ -444,7 +449,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             controller: _teacherPasswordController,
                             textDirection: TextDirection.ltr,
                             decoration: InputDecoration(
-                              labelText: 'كلمة المرور',
+                              labelText: 'كلمة المرور المحددة من الإدارة',
                               prefixIcon: const Icon(Icons.lock_outline),
                               suffixIcon: IconButton(
                                 icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),

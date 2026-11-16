@@ -12,6 +12,7 @@ import '../../features/dashboard/presentation/screens/admin_dashboard_screen.dar
 import '../../features/dashboard/presentation/screens/teacher_dashboard_screen.dart';
 import '../../features/dashboard/presentation/screens/student_dashboard_screen.dart';
 import '../../features/dashboard/presentation/screens/parent_dashboard_screen.dart';
+import '../../features/dashboard/presentation/screens/media_dashboard_screen.dart';
 import '../../features/announcements/presentation/screens/announcements_screen.dart';
 import '../../features/achievements/presentation/screens/achievements_screen.dart';
 import '../../features/islamic_texts/presentation/screens/islamic_texts_screen.dart';
@@ -67,6 +68,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             return const ParentDashboardScreen();
           } else if (user?.role == UserRole.teacher) {
             return const TeacherDashboardScreen();
+          } else if (user?.role == UserRole.media) {
+            return const MediaDashboardScreen();
           }
           return const AdminDashboardScreen();
         },
@@ -86,6 +89,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'teacher',
             name: 'teacherDashboard',
             builder: (context, state) => const TeacherDashboardScreen(),
+          ),
+          GoRoute(
+            path: 'media',
+            name: 'mediaDashboard',
+            builder: (context, state) => const MediaDashboardScreen(),
           ),
           GoRoute(
             path: 'student',
